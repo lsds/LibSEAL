@@ -1,0 +1,23 @@
+--- ./crypto/enclaveshim_ecalls.c	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/./crypto/enclaveshim_ecalls.c	2018-04-18 17:30:42.857092037 +0100
+@@ -422,6 +422,20 @@
+ 	if (modsslload == 1)
+ 	{
+ #endif
++
++#ifdef USE_MONOTONIC_COUNTER_SERVICE
++		int q = mcservice_initialize();
++		if (q < 0) {
++			printf("Monotonic service can't be used. Abort!\n");
++			exit(-1);
++		}
++		sgx_status_t ret = ecall_mcservice_initialize(global_eid, q);
++		if (ret != SGX_SUCCESS) {
++			print_error_message(ret, __func__);
++		}
++		printf("Monotonic service initialized!\n");
++#endif
++
+ 		if (initialize_enclave() < 0) {
+ 			printf("Enclave initialization error!\n");
+ 			exit(-1);

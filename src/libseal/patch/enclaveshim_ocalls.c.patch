@@ -1,0 +1,54 @@
+--- ./crypto/enclaveshim_ocalls.c	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/./crypto/enclaveshim_ocalls.c	2018-04-18 17:30:47.201018514 +0100
+@@ -567,6 +567,12 @@
+ }
+ */
+ 
++int stat(const char *path, struct stat *buf) {
++	ocall_println_string(__func__);
++	//return stat(path, buf);
++	return 0;
++}
++
+ int __xstat(int ver, const char *path, struct stat *buf) {
+ 	ocall_println_string(__func__);
+ 	return stat(path, buf);
+@@ -754,6 +760,38 @@
+ 	return 0;
+ }
+ 
++ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
++	ssize_t ret;
++	sgx_status_t status = ocall_pread(&ret, fd, buf, count, offset);
++	if (status != SGX_SUCCESS) {
++		print_error_message(status);
++		printf("ocall %s sgx error %d\n", __func__, status);
++		return -1;
++	}
++
++	return ret;
++}
++
++ssize_t pread64(int fd, void *buf, size_t count, off_t offset) {
++	return pread(fd, buf, count, offset);
++}
++
++ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
++	ssize_t ret;
++	sgx_status_t status = ocall_pwrite(&ret, fd, buf, count, offset);
++	if (status != SGX_SUCCESS) {
++		print_error_message(status);
++		printf("ocall %s sgx error %d\n", __func__, status);
++		return -1;
++	}
++
++	return ret;
++}
++
++ssize_t pwrite64(int fd, const void *buf, size_t count, off_t offset) {
++	return pwrite(fd, buf, count, offset);
++}
++
+ 
+ /******************** NETWORK ********************/
+ 

@@ -1,0 +1,30 @@
+--- crypto/enclave.edl	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/crypto/enclave.edl	2018-04-18 17:30:00.777803982 +0100
+@@ -237,6 +237,9 @@
+ 
+ 		/* initialisation of the tls processing module to process messages sent to/received from the TLS connections */
+ 		public void ecall_tls_processing_module_init(void);
++
++		/* monotonic counter service */
++		public void ecall_mcservice_initialize(int q);
+ 	};
+ 	
+ 	untrusted {
+@@ -253,6 +256,8 @@
+ 		int ocall_ftruncate(int fd, off_t length);	
+ 		int ocall_unlink([in, string] const char* str);
+ 		off_t ocall_lseek(int fd, off_t offset, int whence) propagate_errno;
++		ssize_t ocall_pread(int fd, [out, size=count] void *buf, size_t count, off_t offset);
++		ssize_t ocall_pwrite(int fd, [in, size=count] const void *buf, size_t count, off_t offset);
+ 		int ocall_lstat([in,string] const char *pathname, [in, out, size=size] struct stat *buf, size_t size) propagate_errno;		
+ 		int ocall_fstat(int fd, [in, out, size=size] struct stat *buf, size_t size) propagate_errno;		
+ 		int ocall_stat([in,string] const char *path, [in, out, size=size] struct stat *buf, size_t size);
+@@ -312,5 +317,8 @@
+ 		void ocall_crypto_ex_free_cb([user_check] void *parent, [user_check] void *ptr, [user_check] CRYPTO_EX_DATA *ad, int idx, long argl, [user_check] void *argp, [user_check] void* cb);
+ 		void ocall_sk_pop_free_cb([user_check] void* data, [user_check] void* cb) allow(ecall_GENERAL_NAME_free);
+ 		int ocall_ssl_ctx_set_next_proto_select_cb([user_check] SSL *s, [user_check] unsigned char **out, [user_check] unsigned char *outlen, [user_check] const unsigned char *in, unsigned int inlen, [user_check] void *arg, [user_check] void* cb) allow(ecall_SSL_select_next_proto);
++
++		/* monotonic counter service */
++		void ocall_mcservice_network_round(void);
+ 	};
+ };

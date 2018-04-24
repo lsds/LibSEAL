@@ -1,0 +1,213 @@
+--- crypto/Makefile.sgx	2018-04-18 17:42:17.053424174 +0100
++++ ../libseal/crypto/Makefile.sgx	2018-04-18 17:29:47.482028835 +0100
+@@ -13,14 +13,19 @@
+ 
+ top_srcdir=..
+ CC=gcc
++CXX=g++
+ CCASFLAGS=-g -O2 -Wall -Werror -std=gnu99 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK -Wno-implicit-function-declaration
+ CFLAGS=-g -O2 -Wall -Werror -std=gnu99 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK -Wno-pointer-sign
++CXXFLAGS=-g -O2 -Wall -Werror -std=c++03 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK
+ CPPFLAGS=-DLIBRESSL_INTERNAL -DOPENSSL_NO_HW_PADLOCK -DOPENSSLDIR=\"/etc/ssl\" -DAES_ASM -DBSAES_ASM -DVPAES_ASM -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DMD5_ASM -DGHASH_ASM -DRSA_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DWHIRLPOOL_ASM -DOPENSSL_CPUID_OBJ -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -DNO_SYSLOG -DOPENSSL_NO_TLSEXT -DCOMPILE_WITH_INTEL_SGX -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_THREADSAFE=0 
+ #DEFS=-DPACKAGE_NAME=\"libressl\" -DPACKAGE_TARNAME=\"libressl\" -DPACKAGE_VERSION=\"2.4.1\" -DPACKAGE_STRING=\"libressl2.4.1\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"libressl\" -DVERSION=\"2.4.1\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE_SYMLINK=1 -DHAVE_ERR_H=1 -DHAVE_ASPRINTF=1 -DHAVE_INET_PTON=1 -DHAVE_MEMMEM=1 -DHAVE_STRNDUP=1 -DHAVE_STRNLEN=1 -DHAVE_STRSEP=1 -DHAVE_TIMEGM=1 -DHAVE_ACCEPT4=1 -DHAVE_POLL=1 -DHAVE_GETAUXVAL=1 -DHAVE_VA_COPY=1 -DHAVE___VA_COPY=1 -DHAS_GNU_WARNING_LONG=1 -DSIZEOF_TIME_T=8
+ DEFS=-DPACKAGE_NAME=\"libressl\" -DPACKAGE_TARNAME=\"libressl\" -DPACKAGE_VERSION=\"2.4.1\" -DPACKAGE_STRING=\"libressl2.4.1\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"libressl\" -DVERSION=\"2.4.1\" -DSTDC_HEADERS=0 -DHAVE_SYS_TYPES_H=0 -DHAVE_SYS_STAT_H=0 -DHAVE_STDLIB_H=0 -DHAVE_STRING_H=0 -DHAVE_MEMORY_H=0 -DHAVE_STRINGS_H=0 -DHAVE_INTTYPES_H=0 -DHAVE_STDINT_H=0 -DHAVE_UNISTD_H=0 -DHAVE_DLFCN_H=0 -DLT_OBJDIR=\".libs/\" -DHAVE_SYMLINK=0 -DHAVE_ERR_H=0 -DHAVE_ASPRINTF=0 -DHAVE_INET_PTON=0 -DHAVE_MEMMEM=0 -DHAVE_STRNDUP=0 -DHAVE_STRNLEN=0 -DHAVE_STRSEP=0 -DHAVE_TIMEGM=0 -DHAVE_ACCEPT4=0 -DHAVE_POLL=0 -DHAVE_GETAUXVAL=0 -DHAVE_VA_COPY=0 -DHAVE___VA_COPY=0 -DHAS_GNU_WARNING_LONG=1 -DSIZEOF_TIME_T=8
+-INCLUDE=-I. -I${top_srcdir}/include -I${top_srcdir}/include/compat -I${top_srcdir}/crypto/asn1 -I${top_srcdir}/crypto/evp -I${top_srcdir}/crypto/modes -I${top_srcdir}/crypto -I${top_srcdir}/include/openssl 
++INCLUDE=-I. -I${top_srcdir}/include -I${top_srcdir}/include/compat -I${top_srcdir}/crypto/asn1 -I${top_srcdir}/crypto/evp -I${top_srcdir}/crypto/modes -I${top_srcdir}/crypto -I${top_srcdir}/include/openssl $(AUDITING_INCLUDE) -Ilogpoint
+ LDFLAGS=-Wl,-z,relro -Wl,-z,now
+ 
++AUDITING_LIB_PATH=-Lauditing/helpers/jsmn -Lauditing/helpers/zlib 
++AUDITING_LIBS=-ljsmn -lzlib
++AUDITING_INCLUDE=-Iauditing/include -Iauditing/helpers/jsmn -Iauditing/helpers/zlib -Iauditing/auditors/git -Iauditing/auditors/owncloud -Iauditing/auditors/dropbox -Iauditing/include 
+ 
+ ########## Intel SGX ############
+ 
+@@ -49,6 +54,15 @@
+ Enclave_Name := enclave.so
+ Signed_Enclave_Name := enclave.signed.so
+ 
++Enclave_Git := enclave-git.so
++Signed_Enclave_Git := enclave-git.signed.so
++
++Enclave_Owncloud := enclave-owncloud.so
++Signed_Enclave_Owncloud := enclave-owncloud.signed.so
++
++Enclave_Dropbox := enclave-dropbox.so
++Signed_Enclave_Dropbox := enclave-dropbox.signed.so
++
+ Enclave_Config_File := enclave.config.xml
+ 
+ App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) 
+@@ -62,7 +76,7 @@
+ #################################
+ 
+ 
+-all: link signed_enclave enclave_u.o
++all: link signed_enclaves enclave_u.o
+ 
+ 
+ ########## Intel SGX ############
+@@ -103,6 +117,15 @@
+ 	@$(CC) $(App_C_Flags) -UCOMPILE_WITH_INTEL_SGX -c $< -o $@
+ 	@echo "CC   <=  $<"
+ 
++tcp_net.o: tcp_net.c
++	@$(CC) $(App_C_Flags) -c $< -o $@
++	@echo "CC   <=  $<"
++
++mcservice-nosgx.o: mcservice.c
++	@$(CC) $(App_C_Flags) -UCOMPILE_WITH_INTEL_SGX -c $< -o $@
++	@echo "CC   <=  $<"
++
++
+ ecall_queue-nosgx.o: ecall_queue.c
+ 	$(CC) $(App_C_Flags) -UCOMPILE_WITH_INTEL_SGX -fPIC -c -o $@ $<
+ 	@echo "CC   <=  $<"
+@@ -121,7 +144,7 @@
+ 
+ Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -fstack-protector $(Enclave_Include_Paths)
+ Enclave_Cpp_Flags := $(Enclave_C_Flags) -nostdinc -nostdinc++
+-Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
++Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) $(AUDITING_LIB_PATH) $(AUDITING_LIBS) \
+ 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
+ 	-Wl,--start-group -lsgx_tstdc -lsgx_tstdcxx -lsgx_tcmalloc -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+ 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+@@ -745,8 +768,28 @@
+ 					compat/explicit_bzero.o \
+ 					compat/getentropy_linux.o
+ 
++AUDITORS_UTILS = auditing/utils/events.o \
++			auditing/utils/generic.o \
++			auditing/utils/http.o \
++			auditing/utils/json_helper.o \
++			auditing/utils/param.o \
++			auditing/utils/base64.o \
++			auditing/utils/util.o
++
++AUDITOR_GIT = auditing/auditors/git/advertise_pack.o \
++			auditing/auditors/git/common.o \
++			auditing/auditors/git/main.o \
++			auditing/auditors/git/receive_pack.o
++
++AUDITOR_OWNCLOUD = auditing/auditors/owncloud/common.o \
++			auditing/auditors/owncloud/docs.o \
++			auditing/auditors/owncloud/main.o
++
++AUDITOR_DROPBOX = auditing/auditors/dropbox/main.o
++
+ # Add files here for your TLS processing module
+-TLSPROCESSINGMODULE = logpoint.o 
++TLSPROCESSINGMODULE = logpoint.o logpoint/logpoint.o \
++		logpoint/sqlite3.o
+ 
+ %.o: %.s
+ 	@$(CC) $(CCASFLAGS) -c $< -fPIC -DPIC -o $@
+@@ -764,6 +807,13 @@
+ 	@$(CC) $(DEFS) $(INCLUDE) $(CPPFLAGS) $(CFLAGS) -I$(SGX_SDK)/include -E -o $(maindir)$(dstbasefile).i $(srcbasefile).c
+ 	@$(CC) $(DEFS) $(INCLUDE) $(CPPFLAGS) $(CFLAGS) $(Enclave_C_Flags) -I$(SGX_SDK)/include -fPIC -DPIC -c -o $(maindir)$(dstbasefile).o $(maindir)$(dstbasefile).i
+ 
++%.o: %.cpp
++	$(eval srcbasefile=$(basename $@))
++	$(eval dstbasefile=$(basename $(notdir $@)))
++	$(eval maindir=$(dir $@))
++	#$(CXX) $(DEFS) $(INCLUDE) $(CPPFLAGS) $(CXXFLAGS) -DCOMPILE_WITH_INTEL_SGX -I$(SGX_SDK)/include  -Iauditing/include -fPIC -DPIC -E  -o $(maindir)$(dstbasefile).i $(maindir)$(dstbasefile).cpp
++	$(CXX) $(DEFS) $(INCLUDE) $(CPPFLAGS) $(CXXFLAGS) $(Enclave_Cpp_Flags) -I$(SGX_SDK)/include -fPIC -DPIC -c -o $(maindir)$(dstbasefile).o $(maindir)$(dstbasefile).cpp
++
+ sfiles: $(SFILES)
+ 
+ libcrypto_sfiles: $(LIBCRYPTO_SFILES)
+@@ -774,19 +824,25 @@
+ 
+ compat: $(COMPAT_FILES)
+ 
++auditing_helpers:
++	make -C auditing/helpers/jsmn
++	make -C auditing/helpers/zlib 
++
++auditing: auditing_helpers $(AUDITORS_UTILS) $(AUDITOR_GIT) $(AUDITOR_OWNCLOUD) $(AUDITOR_DROPBOX)
++
+ tlsprocessingmodule_cfiles: $(TLSPROCESSINGMODULE)
+ 
+ #################################
+ 
+ enclaveshim_ocalls.o: enclaveshim_ocalls.c enclave_t.c enclaveshim_ocalls.h
+ 	$(eval srcbasefile=$(basename $@))
+-	@$(CC) $(CFLAGS) -I../include -I$(SGX_SDK)/include -E -o $(srcbasefile).i $<
++	@$(CC) $(CFLAGS) -DCOMPILE_WITH_INTEL_SGX -I../include -I$(SGX_SDK)/include -E -o $(srcbasefile).i $<
+ 	@$(CC) $(CFLAGS) -I../include $(Enclave_C_Flags) -I$(SGX_SDK)/include -fPIC -DPIC -c -o $@ $(srcbasefile).i
+ 	@echo "CC  <=  $<"
+ 
+ tls_processing_interface.o: tls_processing_interface.c tls_processing_interface.h
+ 	$(eval srcbasefile=$(basename $@))
+-	@$(CC) $(CFLAGS) -DCOMPILE_WITH_INTEL_SGX -I../include -I$(SGX_SDK)/include -I. -Iauditing/include -E -o $(srcbasefile).i $<
++	@$(CC) $(CFLAGS) -I../include -I$(SGX_SDK)/include -I. -Iauditing/include -E -o $(srcbasefile).i $<
+ 	@$(CC) $(CFLAGS) $(Enclave_C_Flags) -I$(SGX_SDK)/include -fPIC -DPIC -c -o $@ $(srcbasefile).i
+ 	@echo "CC  <=  $<"
+ 
+@@ -820,20 +876,37 @@
+ 	@$(CC) $(CFLAGS) -fPIC $(Enclave_C_Flags) -I$(SGX_SDK)/include -c -o $@ $(srcbasefile).i
+ 	@echo "CC  <=  $<"
+ 
+-enclave: enclave_t.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o sfiles libcrypto_sfiles libcrypto_cfiles libssl_cfiles compat tlsprocessingmodule_cfiles
+-	@$(CC) enclave_t.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(TLSPROCESSINGMODULE) -o $(Enclave_Name) $(Enclave_Link_Flags)
+-	@echo "LINK =>  $(Enclave_Name)"
+-
+-signed_enclave: enclave
+-	@$(SGX_ENCLAVE_SIGNER) sign -key enclave_private.pem -enclave $(Enclave_Name) -out $(Signed_Enclave_Name) -config $(Enclave_Config_File)
+-	@echo "SIGN =>  $(Signed_Enclave_Name)"
+-	@rm $(Enclave_Name)
++mcservice.o: mcservice.c 
++	$(eval srcbasefile=$(basename $@))
++	@$(CC) $(CFLAGS) -DCOMPILE_WITH_INTEL_SGX -I../include -I$(SGX_SDK)/include -E -o $(srcbasefile).i $<
++	@$(CC) $(CFLAGS) -fPIC $(Enclave_C_Flags) -I$(SGX_SDK)/include -c -o $@ $(srcbasefile).i
++	@echo "CC  <=  $<"
++
++enclaves: enclave_t.o mcservice.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o sfiles libcrypto_sfiles libcrypto_cfiles libssl_cfiles compat auditing tlsprocessingmodule_cfiles
++	@$(CXX) enclave_t.o mcservice.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(AUDITORS_UTILS) $(AUDITOR_GIT) $(TLSPROCESSINGMODULE) -o $(Enclave_Git) $(Enclave_Link_Flags)
++	@echo "LINK =>  $(Enclave_Git)"
++	@$(CXX) enclave_t.o mcservice.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(AUDITORS_UTILS) $(AUDITOR_OWNCLOUD) $(TLSPROCESSINGMODULE) -o $(Enclave_Owncloud) $(Enclave_Link_Flags)
++	@echo "LINK =>  $(Enclave_Owncloud)"
++	@$(CXX) enclave_t.o mcservice.o enclaveshim_ocalls.o tls_processing_interface.o ecall_queue.o mpmc_queue.o lthread.o lthread_sched.o mempool.o $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(AUDITORS_UTILS) $(AUDITOR_DROPBOX) $(TLSPROCESSINGMODULE) -o $(Enclave_Dropbox) $(Enclave_Link_Flags)
++	@echo "LINK =>  $(Enclave_Dropbox)"
++
++signed_enclaves: enclaves
++	@$(SGX_ENCLAVE_SIGNER) sign -key enclave_private.pem -enclave $(Enclave_Git) -out $(Signed_Enclave_Git) -config $(Enclave_Config_File)
++	@echo "SIGN =>  $(Signed_Enclave_Git)"
++	@rm $(Enclave_Git)
++	@$(SGX_ENCLAVE_SIGNER) sign -key enclave_private.pem -enclave $(Enclave_Owncloud) -out $(Signed_Enclave_Owncloud) -config $(Enclave_Config_File)
++	@echo "SIGN =>  $(Signed_Enclave_Owncloud)"
++	@rm $(Enclave_Owncloud)
++	@$(SGX_ENCLAVE_SIGNER) sign -key enclave_private.pem -enclave $(Enclave_Dropbox) -out $(Signed_Enclave_Dropbox) -config $(Enclave_Config_File)
++	@echo "SIGN =>  $(Signed_Enclave_Dropbox)"
++	@rm $(Enclave_Dropbox)
++	ln -sf $(Signed_Enclave_Git) $(Signed_Enclave_Name)
+ 
+ #################################
+ 
+-link: enclave_u.o hashmap-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o
+-	ar cru libenclave.a enclave_u.o hashmap-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o
+-	$(CC) -fPIC -shared -o libenclave.so enclave_u.o hashmap-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) 
++link: enclave_u.o hashmap-nosgx.o tcp_net.o mcservice-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o
++	ar cru libenclave.a enclave_u.o hashmap-nosgx.o tcp_net.o mcservice-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o
++	$(CXX) -fPIC -shared -o libenclave.so enclave_u.o hashmap-nosgx.o tcp_net.o mcservice-nosgx.o ecall_queue-nosgx.o enclaveshim_ecalls.o ocalls.o cpuid-elf-x86_64-ocall.o -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) 
+ 
+ install: link
+ 	-mkdir -p ../lib
+@@ -848,7 +921,11 @@
+ 	find . -iname "enclave_u.?" -delete
+ 	find . -iname "enclave_t.?" -delete
+ 	find . -iname "$(Enclave_Name)" -delete
++	find . -iname "$(Enclave_Git)" -delete
++	find . -iname "$(Enclave_Owncloud)" -delete
+ 	find . -iname "$(Signed_Enclave_Name)" -delete
++	find . -iname "$(Signed_Enclave_Git)" -delete
++	find . -iname "$(Signed_Enclave_Owncloud)" -delete
+ 	find . -iname "*\.dirstamp" -delete
+ 	find . -iname "*\.o" -delete
+ 	find $(top_srcdir)/ssl -iname "*\.o" -delete
+@@ -858,4 +935,6 @@
+ 	find . -iname "*\.libs" -delete
+ 	find . -iname "libenclave.a" -delete
+ 	find . -iname "libenclave.so" -delete
++	make -C auditing/helpers/jsmn clean
++	make -C auditing/helpers/zlib clean
+ 

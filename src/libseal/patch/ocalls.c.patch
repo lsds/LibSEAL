@@ -1,0 +1,23 @@
+--- ./crypto/ocalls.c	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/./crypto/ocalls.c	2018-04-18 17:30:56.712857506 +0100
+@@ -47,6 +47,20 @@
+         return ret;
+ }
+ 
++ssize_t ocall_pread(int fd, void *buf, size_t count, off_t offset) {
++	log_enter_ocall(__func__);
++	ssize_t ret = pread(fd, buf, count, offset);
++	log_exit_ocall(__func__);
++	return ret;
++}
++
++ssize_t ocall_pwrite(int fd, const void *buf, size_t count, off_t offset) {
++	log_enter_ocall(__func__);
++	ssize_t ret = pwrite(fd, buf, count, offset);
++	log_exit_ocall(__func__);
++	return ret;
++}
++
+ int ocall_unlink(const char* pathname){
+ 	log_enter_ocall(__func__);
+         int ret = unlink(pathname);

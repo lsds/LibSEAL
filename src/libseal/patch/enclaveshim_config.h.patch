@@ -1,0 +1,23 @@
+--- ./crypto/enclaveshim_config.h	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/./crypto/enclaveshim_config.h	2018-04-18 17:30:09.873650128 +0100
+@@ -30,4 +30,20 @@
+ 
+ #undef SQUID_WORKAROUND // define this macro when compiling with Squid, to activate AES-NI and avoid an illegal instruction
+ 
++
++#define DO_LOGGING	// define this macro if you want to use the logging module (processing of messages)
++#undef LOG_FOR_SQUID	// define this macro if you are using Squid
++#undef USE_MONOTONIC_COUNTER_SERVICE // define this macro to use the distributed monotonic counter service
++
++#define SQLITE_DB_NAME "/tmp/libseal.db" // name of the SQLite database or :memory: for an in-memory database
++#define SQLITE_DO_INSERT	// insert into the database
++#undef SQLITE_ASYNC_MODE	// write the database to disk asynchronously
++
++#define SQLITE_ADD_HASH		// add hash to database entries
++#define SQLITE_DO_SIGN		// add signature to database entries
++
++#undef SQLITE_DO_CHECK		// check for invariant violations
++#define SQLITE_CHECKAFTER 75	// check every this number of entries inserted in the database
++#undef SQLITE_DO_TRIMMING	// perform database trimming
++
+ #endif

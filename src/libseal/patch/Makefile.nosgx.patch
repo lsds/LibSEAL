@@ -1,0 +1,96 @@
+--- crypto/Makefile.nosgx	2018-04-18 17:42:17.049424241 +0100
++++ ../libseal/crypto/Makefile.nosgx	2018-04-18 17:29:49.289998262 +0100
+@@ -13,12 +13,17 @@
+ 
+ top_srcdir=..
+ CC=gcc
++CXX=g++
+ CCASFLAGS=-g -O2 -Wall -Werror -std=gnu99 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK -Wno-implicit-function-declaration
+ CFLAGS=-g -O2 -Wall -Werror -std=gnu99 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK -Wno-pointer-sign
++CXXFLAGS=-g -O2 -Wall -std=c++03 -fno-strict-aliasing -fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -DHAVE_GNU_STACK
+ CPPFLAGS=-DLIBRESSL_INTERNAL -DOPENSSL_NO_HW_PADLOCK -DOPENSSLDIR=\"/etc/ssl\" -DAES_ASM -DBSAES_ASM -DVPAES_ASM -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_MONT5 -DOPENSSL_BN_ASM_GF2m -DMD5_ASM -DGHASH_ASM -DRSA_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DWHIRLPOOL_ASM -DOPENSSL_CPUID_OBJ -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_SOURCE -D_GNU_SOURCE -DNO_SYSLOG -DOPENSSL_NO_TLSEXT -UCOMPILE_WITH_INTEL_SGX -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_THREADSAFE=0
+ DEFS=-DPACKAGE_NAME=\"libressl\" -DPACKAGE_TARNAME=\"libressl\" -DPACKAGE_VERSION=\"2.4.1\" -DPACKAGE_STRING=\"libressl2.4.1\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"libressl\" -DVERSION=\"2.4.1\" -DSTDC_HEADERS=0 -DHAVE_SYS_TYPES_H=0 -DHAVE_SYS_STAT_H=0 -DHAVE_STDLIB_H=0 -DHAVE_STRING_H=0 -DHAVE_MEMORY_H=0 -DHAVE_STRINGS_H=0 -DHAVE_INTTYPES_H=0 -DHAVE_STDINT_H=0 -DHAVE_UNISTD_H=0 -DHAVE_DLFCN_H=0 -DLT_OBJDIR=\".libs/\" -DHAVE_SYMLINK=0 -DHAVE_ERR_H=0 -DHAVE_ASPRINTF=0 -DHAVE_INET_PTON=0 -DHAVE_MEMMEM=0 -DHAVE_STRNDUP=0 -DHAVE_STRNLEN=0 -DHAVE_STRSEP=0 -DHAVE_TIMEGM=0 -DHAVE_ACCEPT4=0 -DHAVE_POLL=0 -DHAVE_GETAUXVAL=0 -DHAVE_VA_COPY=0 -DHAVE___VA_COPY=0 -DHAS_GNU_WARNING_LONG=1 -DSIZEOF_TIME_T=8
+-INCLUDE=-I. -I${top_srcdir}/include -I${top_srcdir}/include/compat -I${top_srcdir}/crypto/asn1 -I${top_srcdir}/crypto/evp -I${top_srcdir}/crypto/modes -I${top_srcdir}/crypto -I${top_srcdir}/include/openssl
++INCLUDE=-I. -I${top_srcdir}/include -I${top_srcdir}/include/compat -I${top_srcdir}/crypto/asn1 -I${top_srcdir}/crypto/evp -I${top_srcdir}/crypto/modes -I${top_srcdir}/crypto -I${top_srcdir}/include/openssl -Iauditing/include -Ilogpoint
+ LDFLAGS=-Wl,-z,relro -Wl,-z,now
++AUDITING_LIBS=-ljsmn -lzlib
++AUDITING_LIB_PATH=-Lauditing/helpers/jsmn -Lauditing/helpers/zlib
++AUDITING_INCLUDE=-Iauditing/include -Iauditing/helpers/jsmn -Iauditing/helpers/zlib -Iauditing/auditors/git -Iauditing/auditors/owncloud -Iauditing/auditors/dropbox -Iauditing/include -Ilogpoint -I${top_srcdir}/include/openssl
+ 
+ 
+ all: link 
+@@ -631,7 +636,27 @@
+ 					compat/getentropy_linux.o 
+ 
+ # Add files here for your TLS processing module
+-TLSPROCESSINGMODULE = logpoint.o 
++TLSPROCESSINGMODULE = logpoint.o logpoint/logpoint.o \
++		logpoint/sqlite3.o
++
++AUDITORS_UTILS = auditing/utils/events.o \
++			auditing/utils/generic.o \
++			auditing/utils/http.o \
++			auditing/utils/json_helper.o \
++			auditing/utils/param.o \
++			auditing/utils/base64.o \
++			auditing/utils/util.o
++
++AUDITOR_GIT = auditing/auditors/git/advertise_pack.o \
++			auditing/auditors/git/common.o \
++			auditing/auditors/git/main.o \
++			auditing/auditors/git/receive_pack.o
++
++AUDITOR_OWNCLOUD = auditing/auditors/owncloud/common.o \
++			auditing/auditors/owncloud/docs.o \
++			auditing/auditors/owncloud/main.o
++
++AUDITOR_DROPBOX = auditing/auditors/dropbox/main.o
+ 
+ %.o: %.s
+ 	$(CC) $(CCASFLAGS) -c $< -fPIC -DPIC -o $@
+@@ -642,6 +667,12 @@
+ 	$(eval maindir=$(dir $@))
+ 	$(CC) $(DEFS) $(CPPFLAGS) $(INCLUDE) $(CCASFLAGS) -fPIC -DPIC -c -o $(maindir)$(dstbasefile).o $(srcbasefile).S
+ 
++%.o: %.cpp
++	$(eval srcbasefile=$(basename $@))
++	$(eval dstbasefile=$(basename $(notdir $@)))
++	$(eval maindir=$(dir $@))
++	$(CXX) $(DEFS) $(AUDITING_INCLUDE) $(CPPFLAGS) $(CXXFLAGS) -fPIC -DPIC -c -o $(maindir)$(dstbasefile).o $(srcbasefile).cpp
++
+ %.o: %.c
+ 	$(eval srcbasefile=$(basename $@))
+ 	$(eval dstbasefile=$(basename $(notdir $@)))
+@@ -658,13 +689,22 @@
+ 
+ compat: $(COMPAT_FILES)
+ 
++auditing_helpers:
++	make -C auditing/helpers/jsmn
++	make -C auditing/helpers/zlib
++
+ tlsprocessingmodule_cfiles: $(TLSPROCESSINGMODULE)
+ 
++auditing: auditing_helpers $(AUDITORS_UTILS) $(AUDITOR_GIT) $(AUDITOR_OWNCLOUD) $(AUDITOR_DROPBOX)
++
+ #################################
+ 
+-link: sfiles libcrypto_sfiles libcrypto_cfiles libssl_cfiles compat tlsprocessingmodule_cfiles
++link: sfiles libcrypto_sfiles libcrypto_cfiles libssl_cfiles compat tlsprocessingmodule_cfiles auditing
+ 	ar cru libenclave.a $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(TLSPROCESSINGMODULE)
+ 	$(CC) -shared -o libenclave.so $(SFILES) $(LIBCRYPTO_SFILES) $(LIBCRYPTO_CFILES) $(LIBSSL_CFILES) $(COMPAT_FILES) $(TLSPROCESSINGMODULE)
++	$(CXX) -shared -o auditing-git.so $(AUDITORS_UTILS) $(AUDITOR_GIT) $(AUDITING_INCLUDE) $(AUDITING_LIB_PATH) $(AUDITING_LIBS)
++	$(CXX) -shared -o auditing-owncloud.so $(AUDITORS_UTILS) $(AUDITOR_OWNCLOUD) $(AUDITING_INCLUDE) $(AUDITING_LIB_PATH) $(AUDITING_LIBS)
++	$(CXX) -shared -o auditing-dropbox.so $(AUDITORS_UTILS) $(AUDITOR_DROPBOX) $(AUDITING_INCLUDE) $(AUDITING_LIB_PATH) $(AUDITING_LIBS)
+ 
+ install: link
+ 	-mkdir -p ../lib
+@@ -685,5 +725,8 @@
+ 	find . -iname "*\.libs" -delete
+ 	find . -iname "libenclave.a" -delete
+ 	find . -iname "libenclave.so" -delete
++	find . -iname "auditing-*.so" -delete
+ 	find . -iname "*.a" -delete
++	make -C auditing/helpers/jsmn clean
++	make -C auditing/helpers/zlib clean
+ 
