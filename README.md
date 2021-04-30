@@ -37,7 +37,7 @@ $ cd libseal && ./patch_talos.sh && cd ..
 ```
 
 After that, please follow the instructions in the [TaLoS readme
-file](https://github.com/lsds/TaLoS/README.md). Since you applied the
+file](https://github.com/lsds/TaLoS/blob/master/README.md). Since you applied the
 LiBSEAL patches above, this will indeed compile LibSEAL.
 
 By default, LibSEAL uses the Git auditing module. To use LiBSEAL with
