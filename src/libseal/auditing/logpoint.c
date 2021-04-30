@@ -68,6 +68,10 @@ struct log_entry {
 static hashmap* connections = NULL;
 static thread_mutex_t connections_mutex = THREAD_MUTEX_INITIALIZER;
 
+#ifndef COMPILE_WITH_INTEL_SGX
+int initialized = 0;
+#endif
+
 #ifdef LOG_FOR_SQUID
 // from squid (bio.h)
 #define BIO_TO_CLIENT 6000
@@ -135,7 +139,7 @@ struct log_entry* new_slot(void) {
 	return e;
 }
 
-void log_https_request(const SSL* s, char* req, unsigned int len) {
+void log_https_request(const SSL* s, char* req, unsigned int *len) {
 	struct log_connection* c = retrieve_log_connection((unsigned long)s);
 	if (!c) {
 		my_fprintf(0, "In %s, unknown connection %lu\n", __func__, (unsigned long)s);
@@ -167,17 +171,17 @@ void log_https_request(const SSL* s, char* req, unsigned int len) {
 		c->slot = new_slot();
 	} // else we continue to log to the same slot
 
-	c->slot->req = (char*)realloc(c->slot->req, c->slot->req_len+len);
+	c->slot->req = (char*)realloc(c->slot->req, c->slot->req_len+*len);
 	if (!c->slot->req) {
-		my_fprintf(0, "%s:%i malloc(%d) error!\n", __func__, __LINE__,  c->slot->req_len+len);
+		my_fprintf(0, "%s:%i malloc(%d) error!\n", __func__, __LINE__,  c->slot->req_len+*len);
 		return;
 	}
-	memcpy(c->slot->req + c->slot->req_len, req, len);
-	c->slot->req_len += len;
+	memcpy(c->slot->req + c->slot->req_len, req, *len);
+	c->slot->req_len += *len;
 	c->log_request = 1;
 }
 
-void log_https_reply(const SSL* s, char* rep, unsigned int len) {
+void log_https_reply(const SSL* s, char* rep, unsigned int *len) {
 	struct log_connection* c = retrieve_log_connection((unsigned long)s);
 	if (!c) {
 		my_fprintf(0, "In %s, unknown connection %lu\n", __func__, (unsigned long)s);
@@ -198,22 +202,22 @@ void log_https_reply(const SSL* s, char* rep, unsigned int len) {
 	// the SSL_read and SSL_write are execute by 2 different threads when we use the async ecalls,
 	// so this case happens
 	if (!c->slot) {
-		my_fprintf(0, "%s:%i logging a reply without having a request first (ssl=%ld, slot==NULL, len=%d): [", __func__, __LINE__, (unsigned long)s, len);
+		my_fprintf(0, "%s:%i logging a reply without having a request first (ssl=%ld, slot==NULL, len=%d): [", __func__, __LINE__, (unsigned long)s, *len);
 		unsigned int i;
-		for (i=0; i<len; i++) {
+		for (i=0; i<*len; i++) {
 			my_fprintf(0, "%c", rep[i]);
 		}
 		my_fprintf(0, "]\n");
 		return;
 	}
 
-	c->slot->rep = (char*)realloc(c->slot->rep, c->slot->rep_len+len);
+	c->slot->rep = (char*)realloc(c->slot->rep, c->slot->rep_len+*len);
 	if (!c->slot->rep) {
-		my_fprintf(0, "%s:%i malloc(%d) error!\n", __func__, __LINE__,  c->slot->rep_len+len);
+		my_fprintf(0, "%s:%i malloc(%d) error!\n", __func__, __LINE__,  c->slot->rep_len+*len);
 		return;
 	}
-	memcpy(c->slot->rep + c->slot->rep_len, rep, len);
-	c->slot->rep_len += len;
+	memcpy(c->slot->rep + c->slot->rep_len, rep, *len);
+	c->slot->rep_len += *len;
 	c->log_request = 0;
 }
 
